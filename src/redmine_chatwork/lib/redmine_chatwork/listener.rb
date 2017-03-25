@@ -36,6 +36,8 @@ class ChatWorkListener < Redmine::Hook::Listener
     return if issue.is_private?
     return if not journal.notes
 
+    Rails.logger.info("controller_issues_edit_after_save : status " + issue.status.to_s)
+
     header = {
         :project => escape(issue.project),
         :title => escape(issue),
@@ -139,18 +141,18 @@ class ChatWorkListener < Redmine::Hook::Listener
   def check_disabled(proj)
     return nil if proj.blank?
 
-    cf = ProjectCustomField.find_by_name("ChatWork Disabled")
+    cf = ProjectCustomField.find_by_name("ChatWork Enabled")
     state = proj.custom_value_for(cf).value rescue nil
 
     if state == nil
-      return false
+      return true
     end
 
     if state == '0'
-      return false
+      return true
     end
 
-    true
+    false
   end
 
   def room_for_project(proj)
