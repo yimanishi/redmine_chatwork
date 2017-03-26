@@ -11,8 +11,8 @@ class ChatWorkListener < Redmine::Hook::Listener
     enabled = check_status(issue.project, issue.status)
     return unless enabled
 
-    disabled = check_users(issue.project, journal.user)
-    return if disabled
+    #disabled = check_users(issue.project, journal.user)
+    #return if disabled
 
     return unless room
     return if issue.is_private?
