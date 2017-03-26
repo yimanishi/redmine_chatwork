@@ -11,6 +11,9 @@ class ChatWorkListener < Redmine::Hook::Listener
     enabled = check_status(issue.project, issue.status)
     return unless enabled
 
+    disabled = check_users(issue.project, journal.user)
+    return if disabled
+
     return unless room
     return if issue.is_private?
 
@@ -39,6 +42,9 @@ class ChatWorkListener < Redmine::Hook::Listener
 
     enabled = check_status(issue.project, issue.status)
     return unless enabled
+
+    disabled = check_users(issue.project, journal.user)
+    return if disabled
 
     return unless room and Setting.plugin_redmine_chatwork[:post_updates] == '1'
     return if issue.is_private?
@@ -146,6 +152,15 @@ class ChatWorkListener < Redmine::Hook::Listener
     end
   end
 
+  def check_users(proj,value_name)
+    return nil if proj.blank?
+    return nil if value_name.blank?
+
+    state = check_custom_field(proj,"ChatWork Desabled Users",value_name)
+
+    return state
+  end
+
   def check_tracker(proj,value_name)
     return nil if proj.blank?
     return nil if value_name.blank?
@@ -172,7 +187,7 @@ class ChatWorkListener < Redmine::Hook::Listener
     end
     value_lists = values.to_s.split(",")
     state = value_lists.include?(value_name.to_s)
-    Rails.logger.info("check_status : state = " + state.to_s + " value_name = " + value_name.to_s)
+    Rails.logger.info("redmine_chatwork : state = " + state.to_s + " value_name = " + value_name.to_s)
     return state
   end
 
