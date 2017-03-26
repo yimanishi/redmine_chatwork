@@ -4,9 +4,13 @@ class ChatWorkListener < Redmine::Hook::Listener
   def controller_issues_new_after_save(context={})
     issue = context[:issue]
     room = room_for_project issue.project
-    disabled = check_disabled issue.project
 
+    disabled = check_disabled issue.project
     return if disabled
+
+    enabled = check_status(issue.project, issue.status)
+    return unless enabled
+
     return unless room
     return if issue.is_private?
 
@@ -29,9 +33,13 @@ class ChatWorkListener < Redmine::Hook::Listener
     issue = context[:issue]
     journal = context[:journal]
     room = room_for_project issue.project
-    disabled = check_disabled issue.project
 
+    disabled = check_disabled issue.project
     return if disabled
+
+    enabled = check_status(issue.project, issue.status)
+    return unless enabled
+
     return unless room and Setting.plugin_redmine_chatwork[:post_updates] == '1'
     return if issue.is_private?
     return if not journal.notes
@@ -136,6 +144,36 @@ class ChatWorkListener < Redmine::Hook::Listener
            :protocol => Setting.protocol
        }))
     end
+  end
+
+  def check_tracker(proj,value_name)
+    return nil if proj.blank?
+    return nil if value_name.blank?
+
+    state = check_custom_field(proj,"ChatWork Enabled Trackers",value_name)
+
+    return state
+  end
+
+  def check_status(proj,value_name)
+    return nil if proj.blank?
+    return nil if value_name.blank?
+
+    state = check_custom_field(proj,"ChatWork Enabled Statuses",value_name)
+
+    return state
+  end
+
+  def check_custom_field(proj,cf_name,value_name) 
+    cf = ProjectCustomField.find_by_name(cf_name.to_s)
+    values = proj.custom_value_for(cf).value rescue nil
+    if values == nil
+      return false
+    end
+    value_lists = values.to_s.split(",")
+    state = value_lists.include?(value_name.to_s)
+    Rails.logger.info("check_status : state = " + state.to_s + " value_name = " + value_name.to_s)
+    return state
   end
 
   def check_disabled(proj)
